@@ -682,6 +682,9 @@
       const resultsDiv = document.getElementById('results');
       let html = '';
       
+      // Кнопка отправки заявки вверху
+      html += `<button class="submit-btn" onclick="submitOrder()" style="margin-bottom: 25px;">✅ Отправить заявку</button>`;
+      
       offers.forEach((offer, idx) => {
         const isBest = idx === 0;
         
@@ -739,8 +742,6 @@
           </div>
         `;
       });
-      
-      html += `<button class="submit-btn" onclick="submitOrder()">✅ Отправить заявку</button>`;
       
       resultsDiv.innerHTML = html;
     }

@@ -1,299 +1,642 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Калькулятор доставки</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор доставки стройматериалов</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Open Sans', sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh; 
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
     }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 15px;
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,154.7C960,171,1056,181,1152,165.3C1248,149,1344,107,1392,85.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+      background-size: cover;
+      pointer-events: none;
+      z-index: 0;
     }
-    
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 20px;
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: 30px; 
+      box-shadow: 0 30px 60px rgba(0,0,0,.2), 0 0 100px rgba(102, 126, 234, 0.3); 
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 1;
     }
-    
-    .header {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 25px 20px;
+    .header { 
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff; 
+      padding: 50px 40px; 
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-    
-    .header h1 {
-      font-size: 1.5rem;
-      margin-bottom: 5px;
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: headerShine 8s linear infinite;
     }
-    
-    .header p {
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
-    
-    .progress {
-      display: flex;
-      padding: 20px;
-      gap: 5px;
-      background: #f8f9fa;
-    }
-    
-    .progress-dot {
-      flex: 1;
-      height: 6px;
-      background: #e0e0e0;
-      border-radius: 3px;
-      transition: background 0.3s;
-    }
-    
-    .progress-dot.active {
-      background: #667eea;
-    }
-    
-    .content {
-      padding: 20px;
-    }
-    
-    .step {
-      display: none;
-    }
-    
-    .step.active {
-      display: block;
-      animation: fadeIn 0.3s;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .step-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    
-    .btn-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    .btn {
-      width: 100%;
-      padding: 16px 20px;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      background: white;
-      color: #333;
-      font-size: 1rem;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: block;
-    }
-    
-    .btn:active {
-      transform: scale(0.98);
-      background: #f0f0f0;
-    }
-    
-    .btn.selected {
-      background: #667eea;
-      color: white;
-      border-color: #667eea;
-    }
-    
-    .input-group {
-      margin-bottom: 15px;
-    }
-    
-    .input-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #333;
-      font-size: 0.95rem;
-    }
-    
-    .input-group input,
-    .input-group textarea {
-      width: 100%;
-      padding: 14px;
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-family: inherit;
-    }
-    
-    .input-group input:focus,
-    .input-group textarea:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    
-    .nav-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 25px;
-    }
-    
-    .nav-btn {
-      flex: 1;
-      padding: 16px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .nav-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    
-    .nav-btn-back {
-      background: #f0f0f0;
-      color: #666;
-    }
-    
-    .nav-btn-next {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-    
-    .nav-btn:active:not(:disabled) {
-      transform: scale(0.98);
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 40px 20px;
-    }
-    
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid #f0f0f0;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-    
-    @keyframes spin {
+    @keyframes headerShine {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    
-    .result-card {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
+    .header h1 { 
+      font-size: 3rem; 
+      font-weight: 700; 
       margin-bottom: 15px;
-      border-left: 4px solid #667eea;
+      text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 1;
     }
-    
-    .result-card h4 {
-      font-size: 1.2rem;
-      color: #1a1a2e;
-      margin-bottom: 15px;
+    .header p { 
+      font-size: 1.2rem; 
+      opacity: .95;
+      position: relative;
+      z-index: 1;
     }
-    
-    .result-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #e0e0e0;
+    .content { padding: 50px 40px; }
+    .step { 
+      display: none; 
+      animation: fadeInUp .5s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    .result-row:last-child {
-      border-bottom: none;
+    .step.active { display: block; }
+    @keyframes fadeInUp { 
+      from { 
+        opacity: 0; 
+        transform: translateY(30px);
+      } 
+      to { 
+        opacity: 1; 
+        transform: translateY(0);
+      } 
     }
-    
-    .result-label {
-      color: #666;
-      font-size: 0.9rem;
-    }
-    
-    .result-value {
-      color: #333;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-align: right;
-    }
-    
-    .total-price {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #10b981;
+    .step h2 { 
+      font-size: 2rem; 
+      color: #1a1a2e; 
+      margin-bottom: 35px; 
       text-align: center;
-      padding: 20px 0;
-    }
-    
-    .submit-btn {
-      width: 100%;
-      padding: 18px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
       font-weight: 700;
-      cursor: pointer;
-      margin-top: 20px;
+      position: relative;
+      padding-bottom: 15px;
     }
-    
-    .submit-btn:active {
-      transform: scale(0.98);
+    .step h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 2px;
     }
-    
-    .message {
-      padding: 15px;
-      border-radius: 10px;
+    .chips { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 15px; 
+      justify-content: center; 
+      margin-bottom: 30px; 
+    }
+    .chip { 
+      padding: 14px 28px; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 50px; 
+      background: #fff; 
+      color: #2a2b2a; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); 
+      font-size: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      min-width: 120px; /* Минимальная ширина */
+    }
+    /* МОБИЛЬНАЯ ВЕРСИЯ - применяется всегда на малых экранах */
+    @media screen and (max-width: 768px) {
+      .chips {
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+      .chip {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 16px 20px !important;
+        font-size: 1.05rem !important;
+        display: block !important;
+        text-align: center !important;
+      }
+    }
+    .chip::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(102, 126, 234, 0.1);
+      transform: translate(-50%, -50%);
+      transition: width 0.4s, height 0.4s;
+    }
+    .chip:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    .chip:hover { 
+      border-color: #667eea; 
+      color: #667eea; 
+      transform: translateY(-3px); 
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    .chip.selected { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff; 
+      border-color: transparent;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+    }
+    .progress { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+      margin-bottom: 50px;
+      position: relative;
+    }
+    .progress::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 3px;
+      background: linear-gradient(90deg, #e5e7eb 0%, #e5e7eb 100%);
+      z-index: 0;
+      border-radius: 2px;
+    }
+    .progress-step { 
+      width: 50px; 
+      height: 50px; 
+      border-radius: 50%; 
+      background: #fff;
+      border: 3px solid #e5e7eb;
+      color: #9ca3af; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: 700; 
+      margin: 0 10px; 
+      transition: all .4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      font-size: 1.1rem;
+    }
+    .progress-step.active { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      color: #fff; 
+      transform: scale(1.2);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    .progress-step.completed { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-color: #10b981;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    .progress-step.completed::after {
+      content: '✓';
+      position: absolute;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+    .volume-buttons { 
+      display: flex; 
+      gap: 15px; 
+      justify-content: center; 
+      margin-bottom: 30px; 
+      flex-wrap: wrap; 
+    }
+    .volume-btn { 
+      padding: 18px 32px; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 16px; 
+      background: #fff; 
+      color: #2a2b2a; 
+      font-weight: 700; 
+      cursor: pointer; 
+      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); 
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .volume-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+      transition: left 0.5s;
+    }
+    .volume-btn:hover::before {
+      left: 100%;
+    }
+    .volume-btn:hover { 
+      border-color: #667eea; 
+      color: #667eea;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+    .volume-btn.selected { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff; 
+      border-color: transparent;
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+    .input-group { 
+      margin-bottom: 25px;
+    }
+    .input-group label { 
+      display: block; 
+      margin-bottom: 10px; 
+      font-weight: 600; 
+      color: #1a1a2e;
+      font-size: 1.05rem;
+    }
+    .input-group input, .input-group textarea { 
+      width: 100%; 
+      padding: 16px; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 12px; 
+      font-size: 1rem; 
+      transition: all .3s;
+      background: #fff;
+      font-family: 'Open Sans', sans-serif;
+    }
+    .input-group input:focus, .input-group textarea:focus { 
+      outline: none; 
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+    .custom-volume { 
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+      justify-content: center; 
+      margin-top: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+      border-radius: 16px;
+    }
+    .custom-volume label {
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .custom-volume input { 
+      width: 150px; 
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .loading { 
+      text-align: center; 
+      padding: 80px 20px; 
+    }
+    .spinner { 
+      width: 70px; 
+      height: 70px; 
+      border: 5px solid rgba(102, 126, 234, 0.1);
+      border-top: 5px solid #667eea;
+      border-radius: 50%; 
+      animation: spin 1s linear infinite; 
+      margin: 0 auto 30px;
+    }
+    @keyframes spin { 
+      0% { transform: rotate(0deg); } 
+      100% { transform: rotate(360deg); } 
+    }
+    .loading h3 { 
+      color: #667eea; 
       margin-bottom: 15px;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .loading p { 
+      color: #6b7280; 
+      font-size: 1.15rem; 
+    }
+    .result-card { 
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+      border: 2px solid #e2e8f0; 
+      border-radius: 20px; 
+      padding: 30px; 
+      margin-bottom: 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: linear-gradient(180deg, #667eea, #764ba2);
+    }
+    .result-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    }
+    .result-card h4 { 
+      color: #1a1a2e; 
+      margin-bottom: 20px; 
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .result-card p {
+      color: #4b5563;
+      font-size: 1.05rem;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    .result-card p strong {
+      color: #1a1a2e;
+      font-weight: 700;
+    }
+    .price { 
+      font-size: 3rem; 
+      font-weight: 800; 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center; 
+      margin: 30px 0;
+      text-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+      animation: priceGlow 2s ease-in-out infinite;
+    }
+    @keyframes priceGlow {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.2); }
+    }
+    @keyframes slideInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes slideOutUp {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+    }
+    .navigation { 
+      display: flex; 
+      justify-content: space-between; 
+      margin-top: 50px;
+      gap: 20px;
+    }
+    .btn { 
+      padding: 18px 40px; 
+      border: none; 
+      border-radius: 14px; 
+      font-size: 1.15rem; 
+      font-weight: 700; 
+      cursor: pointer; 
+      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+    .btn-secondary { 
+      background: #f3f4f6; 
+      color: #6b7280;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .btn-secondary:hover:not(:disabled) { 
+      background: #e5e7eb; 
+      color: #374151;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    }
+    .btn-primary { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    .btn-primary:hover:not(:disabled) { 
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+    .btn:disabled { 
+      opacity: .5; 
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    #message {
+      position: sticky;
+      top: 20px;
+      z-index: 1000;
+      margin-bottom: 20px;
+    }
+    .error { 
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border: 2px solid #fecaca; 
+      color: #dc2626; 
+      padding: 20px; 
+      border-radius: 16px; 
       text-align: center;
       font-weight: 600;
-      display: none;
+      font-size: 1.05rem;
+      box-shadow: 0 8px 25px rgba(220, 38, 38, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .success { 
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 2px solid #bbf7d0; 
+      color: #16a34a; 
+      padding: 20px; 
+      border-radius: 16px; 
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.05rem;
+      box-shadow: 0 8px 25px rgba(22, 163, 74, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width:768px){ 
+      body { padding: 10px; }
+      .container { margin: 0; border-radius: 20px; } 
+      .header { padding: 30px 20px; } 
+      .header h1 { font-size: 1.8rem; } 
+      .header p { font-size: 1rem; }
+      .content { padding: 25px 15px; } 
+      
+      /* Chips - уже определены выше с !important */
+      
+      /* Volume buttons - сетка для мобильных */
+      .volume-buttons { 
+        gap: 8px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      } 
+      .volume-btn { 
+        padding: 12px 16px; 
+        font-size: 0.95rem;
+        width: 100%;
+      }
+      
+      /* Progress bar - меньше */
+      .progress { margin-bottom: 30px; }
+      .progress::before { left: 5%; right: 5%; }
+      .progress-step { 
+        width: 36px; 
+        height: 36px; 
+        margin: 0 3px; 
+        font-size: 0.9rem;
+      }
+      
+      /* Заголовки */
+      .step h2 { 
+        font-size: 1.4rem; 
+        margin-bottom: 25px;
+      }
+      
+      /* Inputs */
+      .input-group { margin-bottom: 20px; }
+      .input-group label { font-size: 0.95rem; }
+      .input-group input, .input-group textarea { 
+        padding: 12px; 
+        font-size: 0.95rem;
+      }
+      
+      /* Custom volume */
+      .custom-volume { 
+        flex-direction: column; 
+        gap: 10px;
+        padding: 15px;
+      }
+      .custom-volume input { 
+        width: 100%; 
+        max-width: 200px;
+      }
+      
+      /* Result cards */
+      .result-card { 
+        padding: 20px 15px; 
+        margin-bottom: 20px;
+      }
+      .result-card h4 { font-size: 1.2rem; }
+      .result-card p { font-size: 0.95rem; }
+      
+      /* Price */
+      .price { font-size: 2rem; margin: 20px 0; }
+      
+      /* Navigation */
+      .navigation { 
+        flex-direction: column; 
+        gap: 12px;
+        margin-top: 30px;
+      }
+      .btn { 
+        width: 100%; 
+        padding: 16px 32px;
+        font-size: 1rem;
+      }
+      
+      /* Loading */
+      .loading { padding: 60px 15px; }
+      .loading h3 { font-size: 1.3rem; }
+      .loading p { font-size: 1rem; }
+      .spinner { width: 50px; height: 50px; }
     }
     
-    .message.success {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    
-    .message.error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    /* Для очень маленьких экранов (iPhone SE, Galaxy Fold и т.д.) */
+    @media (max-width:375px) {
+      .header h1 { font-size: 1.5rem; }
+      .header p { font-size: 0.9rem; }
+      .content { padding: 20px 12px; }
+      
+      /* Chip стили уже определены выше */
+      
+      .progress-step { 
+        width: 32px; 
+        height: 32px; 
+        margin: 0 2px;
+        font-size: 0.8rem;
+      }
+      
+      .step h2 { font-size: 1.2rem; }
+      
+      .volume-btn { 
+        padding: 10px 12px; 
+        font-size: 0.9rem;
+      }
+      
+      .btn { 
+        padding: 14px 24px;
+        font-size: 0.95rem;
+      }
+      
+      /* Результаты - делаем вертикальную сетку */
+      .result-card div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+      }
     }
   </style>
 </head>
@@ -301,112 +644,107 @@
   <div class="container">
     <div class="header">
       <h1>🚛 Калькулятор доставки</h1>
-      <p>Рассчитайте стоимость за 2 минуты</p>
+      <p>Рассчитайте стоимость доставки стройматериалов за 3 минуты</p>
     </div>
-    
-    <div class="progress" id="progress">
-      <div class="progress-dot active"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-    </div>
-    
+
     <div class="content">
-      <div class="message" id="message"></div>
-      
+      <div class="progress">
+        <div class="progress-step active" data-step="1">1</div>
+        <div class="progress-step" data-step="2">2</div>
+        <div class="progress-step" data-step="3">3</div>
+        <div class="progress-step" data-step="4">4</div>
+        <div class="progress-step" data-step="5">5</div>
+        <div class="progress-step" data-step="6">6</div>
+        <div class="progress-step" data-step="7">7</div>
+      </div>
+
+      <div id="message" style="display:none;"></div>
+
       <!-- Шаг 1: Материал -->
       <div class="step active" id="step1">
-        <div class="step-title">Выберите материал</div>
-        <div class="btn-list" id="materialList"></div>
+        <h2>Выберите материал</h2>
+        <div class="chips" id="materialChips"></div>
       </div>
-      
       <!-- Шаг 2: Тип -->
       <div class="step" id="step2">
-        <div class="step-title">Выберите тип</div>
-        <div class="btn-list" id="typeList"></div>
+        <h2>Выберите тип материала</h2>
+        <div class="chips" id="typeChips"></div>
       </div>
-      
       <!-- Шаг 3: Фракция -->
       <div class="step" id="step3">
-        <div class="step-title">Выберите фракцию</div>
-        <div class="btn-list" id="fractionList"></div>
+        <h2>Выберите фракцию</h2>
+        <div class="chips" id="fractionChips"></div>
       </div>
-      
       <!-- Шаг 4: Транспорт -->
       <div class="step" id="step4">
-        <div class="step-title">Выберите транспорт</div>
-        <div class="btn-list" id="vehicleList"></div>
+        <h2>Выберите транспорт</h2>
+        <div class="chips" id="vehicleChips"></div>
       </div>
-      
       <!-- Шаг 5: Объём -->
       <div class="step" id="step5">
-        <div class="step-title">Укажите объём</div>
-        <div class="grid-2" id="volumeList"></div>
-        <div class="input-group" style="margin-top: 20px;">
-          <label>Или введите свой объём (м³):</label>
-          <input type="number" id="customVolume" placeholder="Введите м³">
+        <h2>Выберите объем</h2>
+        <div class="volume-buttons" id="volumeButtons"></div>
+        <div class="custom-volume">
+          <label>Или укажите свой объем:</label>
+          <input type="number" id="customVolume" min="1" max="10000" placeholder="м³" />
         </div>
       </div>
-      
       <!-- Шаг 6: Контакты -->
       <div class="step" id="step6">
-        <div class="step-title">Контактные данные</div>
-        <div class="input-group">
-          <label>Имя</label>
-          <input type="text" id="name" placeholder="Ваше имя">
-        </div>
-        <div class="input-group">
-          <label>Телефон</label>
-          <input type="tel" id="phone" placeholder="+7 (999) 123-45-67">
-        </div>
-        <div class="input-group">
-          <label>Адрес доставки *</label>
-          <input type="text" id="address" placeholder="Город, улица, дом" required>
-        </div>
+        <h2>Контактные данные</h2>
+        <div class="input-group"><label>Имя *</label><input type="text" id="name" placeholder="Ваше имя" required /></div>
+        <div class="input-group"><label>Телефон *</label><input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required /></div>
+        <div class="input-group"><label>Адрес доставки *</label><input type="text" id="address" placeholder="Улица, дом, квартира" required /></div>
+        <div class="input-group"><label>Желаемая дата доставки</label><input type="date" id="deliveryDate" /></div>
+        <div class="input-group"><label>Комментарии</label><textarea id="comments" rows="3" placeholder="Дополнительная информация"></textarea></div>
       </div>
-      
-      <!-- Шаг 7: Результат -->
+      <!-- Шаг 7: Результаты -->
       <div class="step" id="step7">
-        <div class="step-title">Результат расчёта</div>
-        <div id="results"></div>
+        <h2>Результаты расчета</h2>
+        <div id="calculationResults"></div>
       </div>
-      
-      <div class="nav-buttons">
-        <button class="nav-btn nav-btn-back" id="backBtn" onclick="prevStep()" disabled>← Назад</button>
-        <button class="nav-btn nav-btn-next" id="nextBtn" onclick="nextStep()">Далее →</button>
+
+      <div class="navigation">
+        <button class="btn btn-secondary" id="prevBtn" onclick="prevStep()" disabled>← Назад</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Далее →</button>
       </div>
     </div>
   </div>
-  
+
   <script>
-    // ========== ДАННЫЕ ==========
+    // ====== DATA ======
+    // ====== ДЕРЕВО ТОВАРОВ (обновлено из базы TechnoProfDB) ======
     const PRODUCT_TREE = {
       "Щебень": {
-        "гранитный": ["5-20", "20-40", "40-70", "10-20", "4-8", "5-10", "8-11,2"],
-        "известняковый": ["10-20", "20-40", "40-70", "5-20"],
+        "гранитный": ["5-20", "20-40", "40-70", "10-20", "70-150", "4-8", "5-10", "8-11,2", "11,2-16", "16-31,5", "25-60", "31,5-63", "70-120", "70-250", "8-16"],
+        "известняковый": ["10-20", "20-40", "40-70", "5-20", "70-120", "70-150"],
         "доломитовый М400": ["10-20", "20-40"],
         "доломитовый М600": ["10-20", "20-40", "40-70"],
-        "без типа": ["5-20", "20-40", "40-70"]
+        "без типа": ["5-20", "20-40", "40-70", "10-20"]
       },
       "ЩПС": {
-        "": ["0-20", "0-40", "0-80", "0-63"],
+        "": ["0-20", "0-40", "0-80", "0-63", "0-31,5", "0-45", "0-16", "0-70"],
         "С1": ["0-40"],
         "С2": ["0-20"],
         "С4": ["0-80"],
-        "С5": ["0-40"]
+        "С5": ["0-40"],
+        "С6": ["0-20"],
+        "С7": ["0-20"]
       },
       "Отсев": {
-        "": ["0-5", "0-4", "0-20"],
-        "гранитный": ["0-4", "0-5"]
+        "": ["0-5", "0-4", "0-20", "0-10"],
+        "гранитный": ["0-4", "0-5"],
+        "Розовый": ["0-5"],
+        "Серый/Серо-Розовый": ["0-5"],
+        "Гравийный": ["0,5-5,0"]
       },
       "Песок": {
-        "карьерный": ["2-2,5", "1,5-2,0", "1", "1,2-1,5"],
-        "сеяный": ["2-2,5", "2,0-2,5", "1,5-2,0"],
-        "намывной": ["2-2,5", "1,5-2,0", "2,5"],
+        "карьерный": ["2-2,5", "1,5-2,0", "1", "1,2-1,5", "0,5-1,0", "1,0-1,5"],
+        "сеяный": ["2-2,5", "2,0-2,5", "1,5-2,0", "2,5-2,9"],
+        "намывной": ["2-2,5", "1,5-2,0", "2,5", "1,0-1,5"],
         "обогащенный": ["1,4-2,1"],
-        "мелкозернистый": ["1", "1,5-1,9"]
+        "мелкозернистый": ["1", "1,5-1,9"],
+        "дробленый": ["0-4"]
       },
       "ПГС": {
         "природный": ["2,5-3,5", "без фракции"],
@@ -414,418 +752,430 @@
         "": ["0-20", "0-40", "0-50"]
       },
       "Гравий": {
-        "": ["5-20", "20-40", "40-70"]
+        "": ["5-20", "20-40", "40-70", "40-100", "120+", "40-150"]
+      },
+      "Камень": {
+        "": ["0-300"]
+      },
+      "Камень/Гравий": {
+        "": ["0-500", "20-40"]
+      },
+      "Супесь": {
+        "": ["0,1-1", "без фракции"]
       },
       "Грунт": {
-        "плодородный": ["без фракции"],
-        "песчаный": ["без фракции"]
+        "плодородный": ["без фракции", "просеяный"],
+        "песчаный": ["без фракции"],
+        "Экосмесь": ["без фракции"]
+      },
+      "Горная масса": {
+        "": ["0-300"],
+        "Калиброванная": ["без фракции"]
       }
     };
-    
-    const VEHICLES = {
-      "Самосвал": { capacity: 20, emoji: "🚛" },
-      "Тонар": { capacity: 30, emoji: "🚜" }
-    };
-    
+
+    const VEHICLES = { "Самосвал": { capacity: 20 }, "Тонар": { capacity: 30 } };
+
     const WEBHOOKS = {
       LOGISTICS: "https://brightsideai.app.n8n.cloud/webhook/logistics",
-      NOTIFY: "https://brightsideai.app.n8n.cloud/webhook/notification-agent"
+      NOTIFY:    "https://brightsideai.app.n8n.cloud/webhook/notification-agent"
     };
-    
-    // ========== СОСТОЯНИЕ ==========
+
+    // ====== STATE ======
     let currentStep = 1;
     let selectedMaterial = "";
     let selectedType = "";
     let selectedFraction = "";
     let selectedVehicle = "";
     let selectedVolume = 0;
-    let calculationResult = null;
-    
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    let lastLd = null; // сохраняем ответ логиста для уведомления
+
+    // ====== INIT ======
     document.addEventListener('DOMContentLoaded', () => {
-      renderMaterials();
-      updateUI();
+      initializeMaterialChips();
+      updateProgress();
+      updateNavigation();
     });
-    
-    // ========== РЕНДЕРИНГ ШАГОВ ==========
-    function renderMaterials() {
-      const list = document.getElementById('materialList');
-      list.innerHTML = '';
-      
-      Object.keys(PRODUCT_TREE).forEach(material => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = material;
-        btn.onclick = () => selectMaterial(material);
-        list.appendChild(btn);
-      });
-    }
-    
-    function renderTypes() {
-      const list = document.getElementById('typeList');
-      list.innerHTML = '';
-      
-      const types = Object.keys(PRODUCT_TREE[selectedMaterial] || {});
-      
-      types.forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = type || 'без типа';
-        btn.onclick = () => selectType(type);
-        list.appendChild(btn);
-      });
-    }
-    
-    function renderFractions() {
-      const list = document.getElementById('fractionList');
-      list.innerHTML = '';
-      
-      const typeKey = selectedType === 'без типа' ? '' : selectedType;
-      const fractions = PRODUCT_TREE[selectedMaterial]?.[typeKey] || [];
-      
-      fractions.forEach(fraction => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = fraction || 'без фракции';
-        btn.onclick = () => selectFraction(fraction);
-        list.appendChild(btn);
-      });
-    }
-    
-    function renderVehicles() {
-      const list = document.getElementById('vehicleList');
-      list.innerHTML = '';
-      
-      Object.keys(VEHICLES).forEach(vehicle => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        const v = VEHICLES[vehicle];
-        btn.innerHTML = `${v.emoji} ${vehicle}<br><span style="font-size: 0.85rem; opacity: 0.7;">(${v.capacity} м³)</span>`;
-        btn.onclick = () => selectVehicle(vehicle);
-        list.appendChild(btn);
-      });
-    }
-    
-    function renderVolumes() {
-      const list = document.getElementById('volumeList');
-      list.innerHTML = '';
-      
-      const capacity = VEHICLES[selectedVehicle]?.capacity || 20;
-      [1, 2, 3, 4, 5, 10].forEach(mult => {
-        const vol = capacity * mult;
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.innerHTML = `<strong style="font-size: 1.3rem;">${vol}</strong> м³<br><span style="font-size: 0.8rem; opacity: 0.7;">${mult} ${mult === 1 ? 'рейс' : 'рейса'}</span>`;
-        btn.onclick = () => selectVolume(vol);
-        list.appendChild(btn);
-      });
-    }
-    
-    // ========== ВЫБОР ==========
-    function selectMaterial(material) {
-      selectedMaterial = material;
-      selectedType = "";
-      selectedFraction = "";
-      renderTypes();
-      nextStep();
-    }
-    
-    function selectType(type) {
-      selectedType = type;
-      selectedFraction = "";
-      renderFractions();
-      nextStep();
-    }
-    
-    function selectFraction(fraction) {
-      selectedFraction = fraction;
-      renderVehicles();
-      nextStep();
-    }
-    
-    function selectVehicle(vehicle) {
-      selectedVehicle = vehicle;
-      renderVolumes();
-      nextStep();
-    }
-    
-    function selectVolume(volume) {
-      selectedVolume = volume;
-      document.getElementById('customVolume').value = volume;
-      nextStep();
-    }
-    
-    // Кастомный объём
-    document.addEventListener('input', (e) => {
-      if (e.target.id === 'customVolume') {
-        const val = parseInt(e.target.value) || 0;
-        if (val > 0) selectedVolume = val;
+
+    // ====== MATERIAL ICONS ======
+    const MATERIAL_ICONS = {
+      "Гравий": "🪨",
+      "Грунт": "🌱",
+      "Камень": "🗿",
+      "Камень/Гравий": "⛰️",
+      "Отсев": "🔸",
+      "ПГС": "🏗️",
+      "Песок": "🏖️",
+      "Супесь": "🌾",
+      "ЩПС": "🧱",
+      "Щебень": "⚒️"
+    };
+
+    // ====== UI BUILDERS ======
+    function initializeMaterialChips(){
+      const c = document.getElementById('materialChips'); 
+      c.innerHTML='';
+      // Принудительно делаем контейнер вертикальным на малых экранах
+      if(window.innerWidth <= 768) {
+        c.style.display = 'flex';
+        c.style.flexDirection = 'column';
+        c.style.gap = '10px';
       }
-    });
-    
-    // ========== НАВИГАЦИЯ ==========
-    function nextStep() {
-      if (currentStep < 7) {
-        currentStep++;
-        showStep(currentStep);
-        updateUI();
-        
-        if (currentStep === 7) {
-          calculate();
+      Object.keys(PRODUCT_TREE).forEach(m=>{ 
+        const el=document.createElement('div'); 
+        el.className='chip';
+        // Принудительные стили для мобильных
+        if(window.innerWidth <= 768) {
+          el.style.width = '100%';
+          el.style.maxWidth = '100%';
+          el.style.padding = '16px 20px';
+          el.style.fontSize = '1.05rem';
+          el.style.display = 'block';
+          el.style.textAlign = 'center';
         }
-      }
-    }
-    
-    function prevStep() {
-      if (currentStep > 1) {
-        currentStep--;
-        showStep(currentStep);
-        updateUI();
-      }
-    }
-    
-    function showStep(step) {
-      // Скрыть все шаги
-      for (let i = 1; i <= 7; i++) {
-        document.getElementById(`step${i}`).classList.remove('active');
-      }
-      // Показать текущий
-      document.getElementById(`step${step}`).classList.add('active');
-    }
-    
-    function updateUI() {
-      // Прогресс бар
-      const dots = document.querySelectorAll('.progress-dot');
-      dots.forEach((dot, idx) => {
-        dot.classList.toggle('active', idx < currentStep);
+        const icon = MATERIAL_ICONS[m] || '📦';
+        el.innerHTML=`<span style="margin-right: 8px;">${icon}</span>${m}`; 
+        el.onclick=()=>selectMaterial(m); 
+        c.appendChild(el); 
       });
-      
-      // Кнопки навигации
-      document.getElementById('backBtn').disabled = currentStep === 1;
-      
-      const nextBtn = document.getElementById('nextBtn');
-      if (currentStep === 7) {
-        nextBtn.style.display = 'none';
-      } else {
-        nextBtn.style.display = 'block';
-      }
     }
-    
-    // ========== РАСЧЁТ ==========
-    async function calculate() {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = `
+    function updateTypeChips(){
+      const c=document.getElementById('typeChips'); 
+      c.innerHTML='';
+      if(window.innerWidth <= 768) {
+        c.style.display = 'flex';
+        c.style.flexDirection = 'column';
+        c.style.gap = '10px';
+      }
+      (Object.keys(PRODUCT_TREE[selectedMaterial]||{})).forEach(t=>{ 
+        const el=document.createElement('div'); 
+        el.className='chip'; 
+        if(window.innerWidth <= 768) {
+          el.style.width = '100%';
+          el.style.padding = '16px 20px';
+          el.style.fontSize = '1.05rem';
+          el.style.display = 'block';
+        }
+        el.textContent=t || 'без типа'; 
+        el.onclick=()=>selectType(t); 
+        c.appendChild(el); 
+      });
+    }
+    function updateFractionChips(){
+      const c=document.getElementById('fractionChips'); 
+      c.innerHTML='';
+      if(window.innerWidth <= 768) {
+        c.style.display = 'flex';
+        c.style.flexDirection = 'column';
+        c.style.gap = '10px';
+      }
+      const t = selectedType==='без типа' ? '' : selectedType;
+      (PRODUCT_TREE[selectedMaterial]?.[t]||[]).forEach(f=>{ 
+        const el=document.createElement('div'); 
+        el.className='chip'; 
+        if(window.innerWidth <= 768) {
+          el.style.width = '100%';
+          el.style.padding = '16px 20px';
+          el.style.fontSize = '1.05rem';
+          el.style.display = 'block';
+        }
+        el.textContent=f || 'без фракции'; 
+        el.onclick=()=>selectFraction(f); 
+        c.appendChild(el); 
+      });
+    }
+    function updateVehicleChips(){
+      const c=document.getElementById('vehicleChips'); 
+      c.innerHTML='';
+      if(window.innerWidth <= 768) {
+        c.style.display = 'flex';
+        c.style.flexDirection = 'column';
+        c.style.gap = '10px';
+      }
+      const vehicleIcons = { "Самосвал": "🚛", "Тонар": "🚜" };
+      Object.keys(VEHICLES).forEach(v=>{ 
+        const el=document.createElement('div'); 
+        el.className='chip';
+        if(window.innerWidth <= 768) {
+          el.style.width = '100%';
+          el.style.padding = '16px 20px';
+          el.style.fontSize = '1.05rem';
+          el.style.display = 'block';
+        }
+        const icon = vehicleIcons[v] || '🚚';
+        el.innerHTML=`<span style="margin-right: 8px; font-size: 1.3rem;">${icon}</span>${v} <span style="font-weight: 700; color: #667eea;">(${VEHICLES[v].capacity} м³)</span>`; 
+        el.onclick=()=>selectVehicle(v); 
+        c.appendChild(el); 
+      });
+    }
+    function updateVolumeButtons(){
+      const c=document.getElementById('volumeButtons'); c.innerHTML='';
+      const cap = VEHICLES[selectedVehicle]?.capacity || 0;
+      [1,2,3,4,5].forEach(mult=>{ 
+        const vol=cap*mult; 
+        const el=document.createElement('div'); 
+        el.className='volume-btn';
+        el.innerHTML=`<span style="font-size: 1.4rem; font-weight: 800;">${vol}</span> <span style="font-size: 0.9rem; opacity: 0.8;">м³</span><br><span style="font-size: 0.85rem; opacity: 0.7;">${mult} ${mult === 1 ? 'рейс' : 'рейса'}</span>`;
+        el.onclick=()=>selectVolume(vol); 
+        c.appendChild(el); 
+      });
+    }
+
+    // ====== SELECT HANDLERS ======
+    function selectMaterial(m){ selectedMaterial=m; selectedType=''; selectedFraction=''; updateTypeChips(); nextStep(); }
+    function selectType(t){ selectedType=t; selectedFraction=''; updateFractionChips(); nextStep(); }
+    function selectFraction(f){ selectedFraction=f; nextStep(); }
+    function selectVehicle(v){ selectedVehicle=v; updateVolumeButtons(); nextStep(); }
+    function selectVolume(v){ selectedVolume=v; document.getElementById('customVolume').value=v; nextStep(); }
+
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.id==='customVolume'){
+        const v = parseInt(e.target.value)||0; if(v>0) selectedVolume=v;
+      }
+    });
+
+    // ====== WIZARD NAV ======
+    function showStep(n){ for(let i=1;i<=7;i++){ document.getElementById(`step${i}`).classList.remove('active'); } document.getElementById(`step${n}`).classList.add('active'); }
+    function updateProgress(){ document.querySelectorAll('.progress-step').forEach((el,idx)=>{ const n=idx+1; el.classList.remove('active','completed'); if(n===currentStep) el.classList.add('active'); else if(n<currentStep) el.classList.add('completed'); }); }
+    function updateNavigation(){ const prev=document.getElementById('prevBtn'); const next=document.getElementById('nextBtn'); prev.disabled=currentStep===1; if(currentStep===7){ next.style.display='none'; } else { next.style.display='block'; next.textContent='Далее →'; next.onclick=nextStep; } }
+    function nextStep(){ if(currentStep<7){ currentStep++; showStep(currentStep); updateProgress(); updateNavigation(); if(currentStep===4) updateVehicleChips(); else if(currentStep===5) updateVolumeButtons(); else if(currentStep===7) calculateDelivery(); } }
+    function prevStep(){ if(currentStep>1){ currentStep--; showStep(currentStep); updateProgress(); updateNavigation(); } }
+    window.nextStep=nextStep; window.prevStep=prevStep;
+
+    // ====== CALCULATION (единый вход логиста) ======
+    async function calculateDelivery(){
+      const resultsContainer = document.getElementById('calculationResults');
+      resultsContainer.innerHTML = `
         <div class="loading">
           <div class="spinner"></div>
-          <div style="color: #666; font-weight: 600;">Рассчитываем...</div>
-          <div style="color: #999; font-size: 0.9rem; margin-top: 10px;">Это займёт 20-30 секунд</div>
-        </div>
-      `;
-      
+          <h3>Рассчитываем стоимость доставки...</h3>
+          <p>Это займет 20-25 секунд</p>
+        </div>`;
+
       try {
-        const address = document.getElementById('address').value.trim();
-        if (!address) {
-          showMessage('Укажите адрес доставки', 'error');
-          currentStep = 6;
-          showStep(6);
-          updateUI();
-          return;
-        }
-        
+        const address = (document.getElementById('address').value||'').trim();
+        const name    = (document.getElementById('name').value||'').trim();
+        const phone   = (document.getElementById('phone').value||'').trim();
+        if(!address) throw new Error('Укажите адрес доставки');
+        if(!selectedMaterial) throw new Error('Не выбран материал');
+        if(!selectedVehicle) throw new Error('Не выбран транспорт');
+        if(!(selectedVolume>0)) throw new Error('Не указан объем');
+
         const payload = {
-          customer: {
-            name: document.getElementById('name').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            address: address
-          },
+          customer: { name, phone, address },
           request: {
             product: selectedMaterial,
-            type: selectedType === 'без типа' ? '' : selectedType,
-            subtype2: selectedFraction === 'без фракции' ? '' : selectedFraction,
+            type: (selectedType==='без типа' ? '' : selectedType),
+            subtype2: (selectedFraction==='без фракции' ? '' : selectedFraction),
             vehicleType: selectedVehicle,
             quantity: selectedVolume
           }
         };
-        
-        const response = await fetch(WEBHOOKS.LOGISTICS, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+
+        const resp = await fetch(WEBHOOKS.LOGISTICS, {
+          method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload)
         });
-        
-        if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
-        
-        const data = await response.json();
-        const offers = Array.isArray(data) ? data : [data];
-        
-        if (offers.length === 0 || offers[0]?.error) {
-          throw new Error(offers[0]?.message || 'Не удалось рассчитать стоимость');
+        if(!resp.ok) throw new Error(`Логистика: HTTP ${resp.status}`);
+        const raw = await resp.text();
+        if(!raw.trim()) throw new Error('Логистика вернула пустой ответ');
+        let data; try { data = JSON.parse(raw); } catch { throw new Error('Логистика вернула невалидный JSON'); }
+
+        // Обрабатываем массив предложений
+        const offers = Array.isArray(data) ? data : (data.result ? (Array.isArray(data.result) ? data.result : [data.result]) : [data]);
+        if(offers.length === 0 || offers[0]?.error){ 
+          throw new Error(offers[0]?.message || 'Ошибка логистики'); 
         }
-        
-        calculationResult = offers[0];
-        displayResults(offers);
-        
-      } catch (error) {
-        console.error(error);
-        resultsDiv.innerHTML = `
-          <div style="background: #f8d7da; padding: 20px; border-radius: 12px; color: #721c24; text-align: center;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
-            <div style="font-weight: 600; margin-bottom: 10px;">Ошибка расчёта</div>
-            <div style="font-size: 0.9rem;">${error.message}</div>
-            <button class="nav-btn nav-btn-back" onclick="prevStep()" style="margin-top: 20px; width: 100%;">← Назад</button>
+
+        // Сохраняем первое предложение для уведомлений
+        const ld = offers[0];
+        lastLd = {
+          fullProductName: ld.fullProductName || `${selectedMaterial} ${selectedType} ${selectedFraction}`.trim(),
+          quantity: ld.quantity ?? selectedVolume,
+          trips: ld.trips ?? Math.ceil(selectedVolume / (selectedVehicle==='Тонар'?30:20)),
+          vehicleType: ld.vehicleType ?? selectedVehicle,
+          priceWithDeliveryPerM3: ld.priceWithDeliveryPerM3 ?? 0,
+          adjustedTotalCost: ld.adjustedTotalCost ?? 0,
+          productCost: ld.productCost ?? 0,
+          adjustedDeliveryCost: ld.adjustedDeliveryCost ?? 0,
+          distanceKm: ld.distanceKm ?? null,
+          durationMin: ld.durationMin ?? null,
+          supplier: ld.supplier || 'ТехноПроф'
+        };
+
+        // === ДЕТАЛЬНЫЙ ВЫВОД ДЛЯ ЛОГИСТОВ ===
+        let html = `
+          <div style="margin-bottom: 30px; text-align: center;">
+            <h3 style="color: #1a1a2e; font-size: 1.5rem; margin-bottom: 10px;">🎯 Найдено предложений: ${offers.length}</h3>
+            <p style="color: #6b7280; margin-bottom: 20px;">Все варианты отсортированы по цене</p>
+            <button onclick="submitOrder()" onmouseover="this.style.transform='translateY(-3px) scale(1.05)'; this.style.boxShadow='0 12px 30px rgba(16, 185, 129, 0.5)';" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 20px rgba(16, 185, 129, 0.3)';" style="padding: 18px 50px; border: none; border-radius: 14px; font-size: 1.2rem; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); transition: all 0.3s;">
+              ✅ Отправить заявку клиенту
+            </button>
           </div>
         `;
+
+        offers.forEach((offer, index) => {
+          const isBest = index === 0;
+          const borderColor = isBest ? '#10b981' : '#e2e8f0';
+          const badgeColor = isBest ? 'background: linear-gradient(135deg, #10b981, #059669); color: white;' : 'background: #f3f4f6; color: #6b7280;';
+          
+          html += `
+            <div class="result-card" style="border: 3px solid ${borderColor}; margin-bottom: 30px; margin-top: 25px; position: relative;">
+              ${isBest ? '<div style="position: absolute; top: -15px; left: 20px; ' + badgeColor + ' padding: 10px 24px; border-radius: 50px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); white-space: nowrap;">⭐ ЛУЧШЕЕ ПРЕДЛОЖЕНИЕ</div>' : `<div style="position: absolute; top: -15px; left: 20px; ${badgeColor} padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; white-space: nowrap;">Вариант ${index + 1}</div>`}
+              
+              <div style="margin-top: 25px;">
+                <h4 style="color: #1a1a2e; font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                  🏢 ${offer.supplier || 'Неизвестный поставщик'}
+                </h4>
+                
+                <!-- Материал -->
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08)); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                  <h5 style="color: #667eea; font-size: 1.2rem; margin-bottom: 15px; font-weight: 700;">📦 Материал</h5>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <p><strong>Наименование:</strong> ${offer.fullProductName || '-'}</p>
+                    <p><strong>Продукт:</strong> ${offer.product || '-'}</p>
+                    ${offer.type ? `<p><strong>Тип:</strong> ${offer.type}</p>` : ''}
+                    ${offer.subtype2 ? `<p><strong>Фракция:</strong> ${offer.subtype2}</p>` : ''}
+                    <p><strong>Насыпная плотность:</strong> ${offer.bulkDensity ? offer.bulkDensity + ' т/м³' : '-'}</p>
+                    <p><strong>Цена за тонну:</strong> ${offer.pricePerTon ? Number(offer.pricePerTon).toLocaleString() + ' ₽' : '-'}</p>
+                    <p><strong>Цена за м³:</strong> ${offer.pricePerUnit ? Number(offer.pricePerUnit).toLocaleString() + ' ₽' : '-'}</p>
+                  </div>
+                </div>
+
+                <!-- Объемы и вес -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.08)); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                  <h5 style="color: #3b82f6; font-size: 1.2rem; margin-bottom: 15px; font-weight: 700;">📊 Объемы</h5>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <p><strong>Запрошено:</strong> ${offer.requestedQuantity || '-'} м³</p>
+                    <p><strong>К поставке:</strong> ${offer.quantity || '-'} м³</p>
+                    <p><strong>Поставлено объем:</strong> ${offer.deliveredVolume || '-'} м³</p>
+                    <p><strong>Вес (тонн):</strong> ${offer.deliveredWeightTons ? Number(offer.deliveredWeightTons).toFixed(2) + ' т' : '-'}</p>
+                  </div>
+                </div>
+
+                <!-- Логистика -->
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.08)); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                  <h5 style="color: #10b981; font-size: 1.2rem; margin-bottom: 15px; font-weight: 700;">🚛 Логистика</h5>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <p><strong>Транспорт:</strong> ${offer.vehicleType || '-'}</p>
+                    <p><strong>Вместимость:</strong> ${offer.vehicleCapacity ? offer.vehicleCapacity + ' м³' : '-'}</p>
+                    <p><strong>Рейсов:</strong> ${offer.trips || '-'}</p>
+                    <p><strong>Расстояние:</strong> ${offer.distanceKm ? Number(offer.distanceKm).toFixed(1) + ' км' : '-'}</p>
+                    <p><strong>Время в пути:</strong> ${offer.durationMin ? Math.round(offer.durationMin) + ' мин (' + (offer.durationMin / 60).toFixed(1) + ' ч)' : '-'}</p>
+                    <p><strong>Доставка за м³:</strong> ${offer.perUnitDeliveryCost ? Number(offer.perUnitDeliveryCost).toLocaleString() + ' ₽' : '-'}</p>
+                  </div>
+                  ${offer.from ? `<p style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #10b981;"><strong>Откуда:</strong> ${offer.from}</p>` : ''}
+                  ${offer.to ? `<p style="margin-top: 8px;"><strong>Куда:</strong> ${offer.to}</p>` : ''}
+                </div>
+
+                <!-- Финансы -->
+                <div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), rgba(249, 115, 22, 0.08)); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                  <h5 style="color: #f97316; font-size: 1.2rem; margin-bottom: 15px; font-weight: 700;">💰 Финансы</h5>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                    <p><strong>Стоимость материала:</strong> <span style="color: #059669; font-weight: 700; font-size: 1.1rem;">${offer.productCost ? Number(offer.productCost).toLocaleString() + ' ₽' : '-'}</span></p>
+                    <p><strong>Стоимость доставки:</strong> <span style="color: #3b82f6; font-weight: 700; font-size: 1.1rem;">${offer.adjustedDeliveryCost ? Number(offer.adjustedDeliveryCost).toLocaleString() + ' ₽' : '-'}</span></p>
+                    <p><strong>Цена с дост. за м³:</strong> <span style="font-weight: 700;">${offer.priceWithDeliveryPerM3 ? Number(offer.priceWithDeliveryPerM3).toLocaleString() + ' ₽' : '-'}</span></p>
+                  </div>
+                  <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #f97316; text-align: center;">
+                    <p style="font-size: 1.1rem; margin-bottom: 8px; color: #6b7280;">ИТОГОВАЯ СТОИМОСТЬ</p>
+                    <p style="font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                      ${offer.adjustedTotalCost ? Number(offer.adjustedTotalCost).toLocaleString() + ' ₽' : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        // Добавляем сравнительную таблицу
+        if(offers.length > 1) {
+          html += `
+            <div class="result-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(124, 58, 237, 0.05)); border: 2px solid #c4b5fd;">
+              <h4 style="color: #8b5cf6; text-align: center; margin-bottom: 25px;">📊 Быстрое сравнение</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                ${offers.map((o, i) => `
+                  <div style="text-align: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <p style="font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">${o.supplier}</p>
+                    <p style="font-size: 1.8rem; font-weight: 800; color: ${i === 0 ? '#10b981' : '#6b7280'}; margin-bottom: 5px;">${o.adjustedTotalCost ? Number(o.adjustedTotalCost).toLocaleString() : '-'} ₽</p>
+                    <p style="font-size: 0.85rem; color: #9ca3af;">${o.distanceKm ? Number(o.distanceKm).toFixed(1) + ' км' : ''} • ${o.durationMin ? Math.round(o.durationMin) + ' мин' : ''}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        resultsContainer.innerHTML = html;
+
+      } catch(e){
+        console.error(e);
+        resultsContainer.innerHTML = `
+          <div class="error">
+            <h4>Ошибка расчета</h4>
+            <p>${e.message}</p>
+            <p>Попробуйте ещё раз или скорректируйте данные</p>
+          </div>`;
       }
     }
-    
-    function displayResults(offers) {
-      const resultsDiv = document.getElementById('results');
-      let html = '';
-      
-      // Кнопка отправки заявки вверху
-      html += `<button class="submit-btn" onclick="submitOrder()" style="margin-bottom: 25px;">✅ Отправить заявку</button>`;
-      
-      offers.forEach((offer, idx) => {
-        const isBest = idx === 0;
-        
-        html += `
-          <div class="result-card" style="${isBest ? 'border-left: 4px solid #10b981;' : ''}">
-            <h4>${isBest ? '⭐ ' : ''}${offer.supplier || 'Поставщик'}</h4>
-            
-            <div class="result-row">
-              <div class="result-label">Материал</div>
-              <div class="result-value">${offer.fullProductName || '-'}</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Объём</div>
-              <div class="result-value">${offer.quantity || 0} м³</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Вес</div>
-              <div class="result-value">${(offer.deliveredWeightTons || 0).toFixed(1)} т</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Транспорт</div>
-              <div class="result-value">${offer.vehicleType || '-'} (${offer.trips || 0} рейса)</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Расстояние</div>
-              <div class="result-value">${(offer.distanceKm || 0).toFixed(1)} км</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Время в пути</div>
-              <div class="result-value">${offer.durationMin || 0} мин</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Стоимость материала</div>
-              <div class="result-value" style="color: #059669;">${(offer.productCost || 0).toLocaleString()} ₽</div>
-            </div>
-            
-            <div class="result-row">
-              <div class="result-label">Стоимость доставки</div>
-              <div class="result-value" style="color: #3b82f6;">${(offer.adjustedDeliveryCost || 0).toLocaleString()} ₽</div>
-            </div>
-            
-            <div class="total-price">
-              ${(offer.adjustedTotalCost || 0).toLocaleString()} ₽
-            </div>
-            
-            <div style="text-align: center; font-size: 0.9rem; color: #666; margin-top: 10px;">
-              ${(offer.priceWithDeliveryPerM3 || 0).toLocaleString()} ₽/м³ с доставкой
-            </div>
-          </div>
-        `;
-      });
-      
-      resultsDiv.innerHTML = html;
-    }
-    
-    // ========== ОТПРАВКА ЗАЯВКИ ==========
-    async function submitOrder() {
-      if (!calculationResult) {
-        showMessage('Нет данных для отправки', 'error');
-        return;
-      }
-      
-      try {
+
+    // ====== SUBMIT (отправка уведомления в NOTIFY) ======
+    async function submitOrder(){
+      try{
+        if(!lastLd){ showMessage('Сначала выполните расчет (шаг 7).', 'error'); return; }
+        const name  = (document.getElementById('name').value||'').trim();
+        const phone = (document.getElementById('phone').value||'').trim();
+        const address = (document.getElementById('address').value||'').trim();
+        const deliveryDate = (document.getElementById('deliveryDate').value||'').trim();
+        const comments = (document.getElementById('comments').value||'').trim();
+        // Убрана проверка - отправляем всегда, даже с пустыми полями
+
         const orderData = {
           material: selectedMaterial,
           type: selectedType,
           fraction: selectedFraction,
-          vehicle: selectedVehicle,
+          vehicle: lastLd.vehicleType,
           requestedVolume: selectedVolume,
-          actualVolume: calculationResult.quantity,
-          trips: calculationResult.trips,
-          name: document.getElementById('name').value.trim(),
-          phone: document.getElementById('phone').value.trim(),
-          address: document.getElementById('address').value.trim(),
-          materialCost: calculationResult.productCost,
-          deliveryCost: calculationResult.adjustedDeliveryCost,
-          totalCost: calculationResult.adjustedTotalCost,
-          priceWithDeliveryPerM3: calculationResult.priceWithDeliveryPerM3,
-          distance: calculationResult.distanceKm,
-          duration: calculationResult.durationMin,
-          supplier: calculationResult.supplier,
+          actualVolume: lastLd.quantity,
+          trips: lastLd.trips,
+
+          name, phone, address, deliveryDate, comments,
+
+          // ❗️ Берём точные поля из результата логиста, а не заглушки
+          materialCost: lastLd.productCost,
+          deliveryCost: lastLd.adjustedDeliveryCost,
+          totalCost: lastLd.adjustedTotalCost,
+          priceWithDeliveryPerM3: lastLd.priceWithDeliveryPerM3,
+
+          distance: lastLd.distanceKm,
+          duration: lastLd.durationMin,
+
+          supplier: lastLd.supplier,
           timestamp: new Date().toISOString()
         };
-        
-        const response = await fetch(WEBHOOKS.NOTIFY, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData)
-        });
-        
-        if (!response.ok) throw new Error('Ошибка отправки');
-        
-        showMessage('✅ Заявка отправлена! Мы свяжемся с вами в ближайшее время.', 'success');
-        
-        setTimeout(() => {
-          resetForm();
-        }, 3000);
-        
-      } catch (error) {
-        console.error(error);
-        showMessage('Ошибка отправки: ' + error.message, 'error');
+
+        const resp = await fetch(WEBHOOKS.NOTIFY, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(orderData) });
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        showMessage('Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.', 'success');
+        setTimeout(()=>{ resetForm(); }, 2500);
+      } catch(e){
+        console.error(e);
+        showMessage(`Ошибка отправки заявки: ${e.message}`, 'error');
       }
     }
-    
-    // ========== УТИЛИТЫ ==========
-    function showMessage(text, type) {
-      const msg = document.getElementById('message');
-      msg.textContent = text;
-      msg.className = `message ${type}`;
-      msg.style.display = 'block';
-      
-      setTimeout(() => {
-        msg.style.display = 'none';
-      }, 5000);
+
+    function showMessage(text, type){ 
+      const el=document.getElementById('message'); 
+      const icon = type === 'success' ? '✅' : '❌';
+      el.innerHTML=`<span style="font-size: 1.5rem; margin-right: 10px;">${icon}</span>${text}`; 
+      el.className=type; 
+      el.style.display='block'; 
+      el.style.animation='slideInDown 0.5s ease-out';
+      setTimeout(()=>{ 
+        el.style.animation='slideOutUp 0.5s ease-in';
+        setTimeout(()=>{ el.style.display='none'; }, 500);
+      }, 4500); 
     }
-    
-    function resetForm() {
-      currentStep = 1;
-      selectedMaterial = "";
-      selectedType = "";
-      selectedFraction = "";
-      selectedVehicle = "";
-      selectedVolume = 0;
-      calculationResult = null;
-      
-      document.getElementById('name').value = '';
-      document.getElementById('phone').value = '';
-      document.getElementById('address').value = '';
-      document.getElementById('customVolume').value = '';
-      
-      showStep(1);
-      updateUI();
-      renderMaterials();
-    }
+    function resetForm(){ currentStep=1; selectedMaterial=''; selectedType=''; selectedFraction=''; selectedVehicle=''; selectedVolume=0; lastLd=null; document.getElementById('name').value=''; document.getElementById('phone').value=''; document.getElementById('address').value=''; document.getElementById('deliveryDate').value=''; document.getElementById('comments').value=''; document.getElementById('customVolume').value=''; showStep(1); updateProgress(); updateNavigation(); showMessage('Форма сброшена. Можете начать заново.','success'); }
   </script>
 </body>
 </html>
-

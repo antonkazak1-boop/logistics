@@ -983,7 +983,12 @@
         // Обрабатываем массив предложений
         const offers = Array.isArray(data) ? data : (data.result ? (Array.isArray(data.result) ? data.result : [data.result]) : [data]);
         if(offers.length === 0 || offers[0]?.error){ 
-          throw new Error(offers[0]?.message || 'Ошибка логистики'); 
+          const errorMsg = offers[0]?.message || 'Ошибка логистики';
+          // Проверяем на превышение лимита маршрута
+          if(errorMsg.includes('не может ехать') || errorMsg.includes('максимум') || errorMsg.includes('минимум')) {
+            throw new Error(`🚫 Превышение лимита маршрута: ${errorMsg.replace('❌ ', '')}`);
+          }
+          throw new Error(errorMsg); 
         }
 
         // Сохраняем первое предложение для уведомлений
@@ -1062,6 +1067,7 @@
                     <p><strong>Расстояние:</strong> ${offer.distanceKm ? Number(offer.distanceKm).toFixed(1) + ' км' : '-'}</p>
                     <p><strong>Время в пути:</strong> ${offer.durationMin ? Math.round(offer.durationMin) + ' мин (' + (offer.durationMin / 60).toFixed(1) + ' ч)' : '-'}</p>
                     <p><strong>Доставка за м³:</strong> ${offer.perUnitDeliveryCost ? Number(offer.perUnitDeliveryCost).toLocaleString() + ' ₽' : '-'}</p>
+                    <p><strong>Ставка доставки:</strong> ${offer.vehicleType === 'Тонар' && offer.tonarRate ? offer.tonarRate + ' ₽/т·км' : offer.vehicleType === 'Самосвал' ? 'По объёму' : offer.vehicleType === 'Тонар' ? 'Не указана' : '-'}</p>
                   </div>
                   ${offer.from ? `<p style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #10b981;"><strong>Откуда:</strong> ${offer.from}</p>` : ''}
                   ${offer.to ? `<p style="margin-top: 8px;"><strong>Куда:</strong> ${offer.to}</p>` : ''}

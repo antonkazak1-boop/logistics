@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 Админка — История заказов</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 30px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    
+    .header .stats {
+      display: flex;
+      gap: 30px;
+      font-size: 0.9rem;
+    }
+    
+    .stat-item {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #667eea;
+    }
+    
+    .stat-label {
+      opacity: 0.7;
+      font-size: 0.8rem;
+    }
+    
+    .controls {
+      padding: 30px 40px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .controls input,
+    .controls select,
+    .controls button {
+      padding: 12px 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    
+    .controls input,
+    .controls select {
+      background: white;
+    }
+    
+    .controls input:focus,
+    .controls select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .controls button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .controls button:active {
+      transform: translateY(0);
+    }
+    
+    .btn-secondary {
+      background: #6c757d !important;
+    }
+    
+    .content {
+      padding: 30px 40px;
+      min-height: 400px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    
+    th {
+      background: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #dee2e6;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    tr:hover {
+      background: #f8f9fa;
+      cursor: pointer;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .status-completed {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-cancelled {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #999;
+    }
+    
+    .empty-state svg {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+      padding: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .modal-header h2 {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+    
+    .modal-header p {
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+    
+    .modal-body {
+      padding: 30px;
+    }
+    
+    .detail-row {
+      display: flex;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .detail-label {
+      flex: 0 0 150px;
+      font-weight: 600;
+      color: #666;
+    }
+    
+    .detail-value {
+      flex: 1;
+      color: #333;
+    }
+    
+    .close-modal {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .close-modal:hover {
+      background: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 История заказов</h1>
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalOrders">0</div>
+          <div class="stat-label">Заказов</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalVolume">0</div>
+          <div class="stat-label">м³</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="totalRevenue">0 ₽</div>
+          <div class="stat-label">Выручка</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <input type="date" id="dateFrom" placeholder="С даты">
+      <input type="date" id="dateTo" placeholder="По дату">
+      <input type="text" id="searchPhone" placeholder="Телефон клиента">
+      <select id="statusFilter">
+        <option value="">Все статусы</option>
+        <option value="completed">Завершён</option>
+        <option value="pending">В ожидании</option>
+        <option value="cancelled">Отменён</option>
+      </select>
+      <button onclick="loadOrders()">🔍 Поиск</button>
+      <button onclick="resetFilters()" class="btn-secondary">🔄 Сбросить</button>
+      <button onclick="exportToCSV()">📥 Экспорт CSV</button>
+    </div>
+    
+    <div class="content">
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div>Загрузка данных...</div>
+      </div>
+      
+      <div id="tableContainer" style="display: none;">
+        <table id="ordersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Дата</th>
+              <th>Клиент</th>
+              <th>Телефон</th>
+              <th>Товар</th>
+              <th>Объём (м³)</th>
+              <th>Сумма (₽)</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody">
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+        <h3>Заказов не найдено</h3>
+        <p>Попробуйте изменить фильтры поиска</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Модальное окно с деталями заказа -->
+  <div class="modal" id="orderModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Заказ #<span id="modalOrderId"></span></h2>
+        <p id="modalOrderDate"></p>
+      </div>
+      <div class="modal-body" id="modalBody">
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ============ КОНФИГУРАЦИЯ ============
+    // Выберите источник данных:
+    
+    // ВАРИАНТ 1: Supabase
+    const USE_SUPABASE = true;
+    const SUPABASE_URL = 'https://your-project.supabase.co/rest/v1/orders';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+    
+    // ВАРИАНТ 2: Google Sheets через n8n
+    const USE_GOOGLE_SHEETS = false;
+    const N8N_WEBHOOK = 'https://your-n8n.app.n8n.cloud/webhook/get-orders';
+    
+    // ============ ДАННЫЕ ============
+    let allOrders = [];
+    let filteredOrders = [];
+    
+    // ============ ЗАГРУЗКА ДАННЫХ ============
+    async function loadOrders() {
+      showLoading(true);
+      
+      try {
+        if (USE_SUPABASE) {
+          await loadFromSupabase();
+        } else if (USE_GOOGLE_SHEETS) {
+          await loadFromGoogleSheets();
+        } else {
+          // Демо-данные
+          allOrders = generateDemoData();
+        }
+        
+        filterOrders();
+        updateStats();
+        renderOrders();
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        alert('Ошибка загрузки данных: ' + error.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+    
+    async function loadFromSupabase() {
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      const phone = document.getElementById('searchPhone').value;
+      const status = document.getElementById('statusFilter').value;
+      
+      let url = SUPABASE_URL + '?select=*&order=created_at.desc';
+      
+      if (dateFrom) url += `&created_at=gte.${dateFrom}T00:00:00`;
+      if (dateTo) url += `&created_at=lte.${dateTo}T23:59:59`;
+      if (phone) url += `&customer_phone=ilike.*${phone}*`;
+      if (status) url += `&status=eq.${status}`;
+      
+      const response = await fetch(url, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Ошибка подключения к Supabase');
+      
+      allOrders = await response.json();
+    }
+    
+    async function loadFromGoogleSheets() {
+      const response = await fetch(N8N_WEBHOOK);
+      if (!response.ok) throw new Error('Ошибка подключения к n8n');
+      allOrders = await response.json();
+    }
+    
+    // ============ ФИЛЬТРАЦИЯ ============
+    function filterOrders() {
+      const phone = document.getElementById('searchPhone').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      
+      filteredOrders = allOrders.filter(order => {
+        if (phone && !order.customer_phone?.toLowerCase().includes(phone)) return false;
+        if (status && order.status !== status) return false;
+        
+        if (dateFrom || dateTo) {
+          const orderDate = new Date(order.created_at);
+          if (dateFrom && orderDate < new Date(dateFrom)) return false;
+          if (dateTo && orderDate > new Date(dateTo + 'T23:59:59')) return false;
+        }
+        
+        return true;
+      });
+    }
+    
+    function resetFilters() {
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value = '';
+      document.getElementById('searchPhone').value = '';
+      document.getElementById('statusFilter').value = '';
+      loadOrders();
+    }
+    
+    // ============ ОТОБРАЖЕНИЕ ============
+    function renderOrders() {
+      const tbody = document.getElementById('ordersBody');
+      const tableContainer = document.getElementById('tableContainer');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (filteredOrders.length === 0) {
+        tableContainer.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+      
+      tableContainer.style.display = 'block';
+      emptyState.style.display = 'none';
+      
+      tbody.innerHTML = filteredOrders.map(order => {
+        const date = new Date(order.created_at);
+        const statusClass = `status-${order.status || 'pending'}`;
+        const statusText = {
+          completed: '✅ Завершён',
+          pending: '⏳ В ожидании',
+          cancelled: '❌ Отменён'
+        }[order.status] || '⏳ В ожидании';
+        
+        return `
+          <tr onclick="showOrderDetails(${order.id})">
+            <td><strong>#${order.order_id || order.id}</strong></td>
+            <td>${date.toLocaleString('ru')}</td>
+            <td>${order.customer_name || 'N/A'}</td>
+            <td>${order.customer_phone || 'N/A'}</td>
+            <td>${order.full_product_name || 'N/A'}</td>
+            <td>${(order.delivered_quantity || 0).toFixed(1)}</td>
+            <td><strong>${(order.total_cost || 0).toLocaleString('ru')} ₽</strong></td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    function updateStats() {
+      const totalOrders = filteredOrders.length;
+      const totalVolume = filteredOrders.reduce((sum, o) => sum + (o.delivered_quantity || 0), 0);
+      const totalRevenue = filteredOrders.reduce((sum, o) => sum + (o.total_cost || 0), 0);
+      
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('totalVolume').textContent = totalVolume.toFixed(1);
+      document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString('ru') + ' ₽';
+    }
+    
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+    
+    // ============ ДЕТАЛИ ЗАКАЗА ============
+    function showOrderDetails(orderId) {
+      const order = filteredOrders.find(o => o.id === orderId);
+      if (!order) return;
+      
+      const date = new Date(order.created_at);
+      
+      document.getElementById('modalOrderId').textContent = order.order_id || order.id;
+      document.getElementById('modalOrderDate').textContent = date.toLocaleString('ru');
+      
+      const details = [
+        { label: '👤 Клиент', value: order.customer_name || 'N/A' },
+        { label: '📞 Телефон', value: order.customer_phone || 'N/A' },
+        { label: '📍 Адрес', value: order.customer_address || 'N/A' },
+        { label: '', value: '' },
+        { label: '🛒 Товар', value: order.full_product_name || 'N/A' },
+        { label: '📦 Запрошено', value: `${order.requested_quantity || 0} м³` },
+        { label: '📦 Доставлено', value: `${(order.delivered_quantity || 0).toFixed(1)} м³ (${(order.delivered_weight_tons || 0).toFixed(2)} т)` },
+        { label: '🚛 Транспорт', value: order.vehicle_type || 'N/A' },
+        { label: '', value: '' },
+        { label: '🏢 Поставщик', value: order.supplier || 'N/A' },
+        { label: '📏 Расстояние', value: `${order.distance_km || 0} км` },
+        { label: '⏱ Время в пути', value: `${order.duration_min || 0} мин` },
+        { label: '', value: '' },
+        { label: '💰 Товар', value: `${(order.product_cost || 0).toLocaleString('ru')} ₽` },
+        { label: '🚚 Доставка', value: `${(order.delivery_cost || 0).toLocaleString('ru')} ₽` },
+        { label: '💳 ИТОГО', value: `<strong>${(order.total_cost || 0).toLocaleString('ru')} ₽</strong>` },
+        { label: '📊 За м³ с доставкой', value: `${(order.price_with_delivery_per_m3 || 0).toLocaleString('ru')} ₽/м³` },
+      ];
+      
+      const modalBody = document.getElementById('modalBody');
+      modalBody.innerHTML = details.map(d => 
+        d.label ? `
+          <div class="detail-row">
+            <div class="detail-label">${d.label}</div>
+            <div class="detail-value">${d.value}</div>
+          </div>
+        ` : '<div style="height: 20px;"></div>'
+      ).join('') + '<button class="close-modal" onclick="closeModal()">Закрыть</button>';
+      
+      document.getElementById('orderModal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('orderModal').classList.remove('active');
+    }
+    
+    // Закрытие модалки по клику вне её
+    document.getElementById('orderModal').addEventListener('click', (e) => {
+      if (e.target.id === 'orderModal') closeModal();
+    });
+    
+    // ============ ЭКСПОРТ ============
+    function exportToCSV() {
+      const headers = ['ID', 'Дата', 'Клиент', 'Телефон', 'Товар', 'Объём (м³)', 'Сумма (₽)', 'Статус'];
+      const rows = filteredOrders.map(o => [
+        o.order_id || o.id,
+        new Date(o.created_at).toLocaleString('ru'),
+        o.customer_name || '',
+        o.customer_phone || '',
+        o.full_product_name || '',
+        o.delivered_quantity || 0,
+        o.total_cost || 0,
+        o.status || ''
+      ]);
+      
+      const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    }
+    
+    // ============ ДЕМО-ДАННЫЕ ============
+    function generateDemoData() {
+      return [
+        {
+          id: 1,
+          order_id: '12345',
+          created_at: new Date().toISOString(),
+          customer_name: 'Иван Петров',
+          customer_phone: '+79001234567',
+          customer_address: 'СПб, ул. Ленина 10',
+          full_product_name: 'Щебень гранитный 5-20',
+          requested_quantity: 30,
+          delivered_quantity: 30,
+          delivered_weight_tons: 41.4,
+          vehicle_type: 'Тонар',
+          supplier: 'Петронеруд',
+          distance_km: 65,
+          duration_min: 78,
+          product_cost: 43920,
+          delivery_cost: 5400,
+          total_cost: 49320,
+          price_with_delivery_per_m3: 1644,
+          status: 'completed'
+        },
+        {
+          id: 2,
+          order_id: '12346',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          customer_name: 'Мария Сидорова',
+          customer_phone: '+79007654321',
+          customer_address: 'Пушкин, Садовая 5',
+          full_product_name: 'Песок намывной 2-2,5',
+          requested_quantity: 20,
+          delivered_quantity: 20,
+          delivered_weight_tons: 29.2,
+          vehicle_type: 'Самосвал',
+          supplier: 'Приветинское',
+          distance_km: 35,
+          duration_min: 45,
+          product_cost: 18980,
+          delivery_cost: 9400,
+          total_cost: 28380,
+          price_with_delivery_per_m3: 1419,
+          status: 'completed'
+        }
+      ];
+    }
+    
+    // ============ АВТОЗАГРУЗКА ============
+    window.addEventListener('DOMContentLoaded', () => {
+      loadOrders();
+    });
+  </script>
+</body>
+</html>
+
+

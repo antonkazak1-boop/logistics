@@ -1,0 +1,151 @@
+// === Конфиг ===
+const TONAR_CAPACITY_M3 = 30;     // м³/рейс
+const DUMP_CAPACITY_M3  = 20;     // м³/рейс
+
+const TONAR_MIN_DIST_KM = 60;     // Тонар не ездит ближе
+const DUMP_MAX_DIST_KM  = 100;    // Самосвал не ездит дальше
+
+// Тонар: фикс ставка в ₽/т·км
+const TONAR_RATE_PER_TON_KM = 6.5;
+
+// Самосвал: ступени тарифа в ₽/м³
+function dumpPerM3Cost(distanceKm) {
+  if (distanceKm <= 0) return 0;
+  if (distanceKm <= 10)  return 400;
+  if (distanceKm <= 20)  return 450;
+  if (distanceKm <= 40)  return 500;
+  if (distanceKm <= 50)  return 550;
+  // 50 < d ≤ 100
+  return 11 * distanceKm;
+}
+
+// Утилита
+const toNum = (v, d = 0) => {
+  const n = Number(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : d;
+};
+
+return items.map(item => {
+  const route = item.json.routes?.[0];
+  const leg   = route?.legs?.[0];
+
+  const supplierInfo = item.json.supplier || {};
+  const productInfo  = item.json.productInfo || {};
+  const customer     = item.json.customer || {}; // <-- ПРОБРАСЫВАЕМ КЛИЕНТА
+
+  const supplier    = supplierInfo.supplier || 'Unknown';
+  const vehicleType = item.json.vehicleType || 'Самосвал';
+  const qtyReqM3    = toNum(item.json.quantity, 0); // запрошено, м³
+
+  // Новые поля из каталога: насыпная плотность (т/м³) и цена за тонну (₽/т)
+  const bulkDensity = toNum(
+    productInfo.nasypnaya ?? productInfo.bulk_density ?? supplierInfo.bulk_density,
+    NaN
+  );
+  const pricePerTon = toNum(
+    supplierInfo.price_per_ton ?? productInfo.price_per_ton,
+    NaN
+  );
+
+  // Производные (для совместимости)
+  const pricePerUnit = (Number.isFinite(pricePerTon) && Number.isFinite(bulkDensity))
+    ? +(pricePerTon * bulkDensity).toFixed(2) : NaN; // ₽/м³ (цена_за_тонну × т_в_кубе)
+
+  // Проверки
+  if (!route || !leg) {
+    return { json: { error: true, message: `❌ Маршрут отсутствует у поставщика ${supplier}`, supplier, customer } };
+  }
+  if (!Number.isFinite(bulkDensity) || bulkDensity <= 0) {
+    return { json: { error: true, message: `❌ Нет насыпной плотности (т/м³) у ${supplier}`, supplier, customer } };
+  }
+  if (!Number.isFinite(pricePerTon) || pricePerTon <= 0) {
+    return { json: { error: true, message: `❌ Нет цены за тонну (₽/т) у ${supplier}`, supplier, customer } };
+  }
+  if (!Number.isFinite(qtyReqM3) || qtyReqM3 <= 0) {
+    return { json: { error: true, message: `❌ Некорректный объём заказа (м³)`, supplier, customer } };
+  }
+
+  const distanceKm  = +(leg.distance.value / 1000).toFixed(2);
+  const durationMin = Math.round(leg.duration.value / 60);
+
+  // Ограничения расстояния
+  if (vehicleType === 'Самосвал' && distanceKm > DUMP_MAX_DIST_KM) {
+    return { json: { error: true, message: `❌ Самосвал не может ехать на ${distanceKm} км (максимум ${DUMP_MAX_DIST_KM} км)`, supplier, customer } };
+  }
+  if (vehicleType === 'Тонар' && distanceKm < TONAR_MIN_DIST_KM) {
+    return { json: { error: true, message: `❌ Тонар не может ехать на ${distanceKm} км (минимум ${TONAR_MIN_DIST_KM} км)`, supplier, customer } };
+  }
+
+  // Кратно машине
+  const capacityM3 = (vehicleType === 'Тонар') ? TONAR_CAPACITY_M3 : DUMP_CAPACITY_M3;
+  const trips = Math.ceil(qtyReqM3 / capacityM3);
+  const deliveredVolumeM3 = trips * capacityM3;                 // фактически, м³
+  const deliveredWeightT  = +(deliveredVolumeM3 * bulkDensity).toFixed(3); // т
+
+  // === Доставка ===
+  let perUnitDeliveryCost_M3; // ₽/м³
+  let adjustedDeliveryCost;   // ₽
+
+  if (vehicleType === 'Тонар') {
+    // 6.5 ₽/т·км
+    const perTonDelivery = TONAR_RATE_PER_TON_KM * distanceKm;      // ₽/т
+    adjustedDeliveryCost = +(perTonDelivery * deliveredWeightT).toFixed(2);
+    perUnitDeliveryCost_M3 = +((perTonDelivery * bulkDensity)).toFixed(2); // для совместимости
+  } else {
+    // Самосвал: ступени в ₽/м³
+    const perM3 = dumpPerM3Cost(distanceKm);
+    perUnitDeliveryCost_M3 = +perM3.toFixed(2);
+    adjustedDeliveryCost = +(perM3 * deliveredVolumeM3).toFixed(2);
+  }
+
+  // === Товар по весу ===
+  const productCost = +(pricePerTon * deliveredWeightT).toFixed(2); // ₽
+
+  // Итого
+  const adjustedTotalCost = +(adjustedDeliveryCost + productCost).toFixed(2);
+
+  // Цена за м³ с доставкой — всегда по ФАКТИЧЕСКОМУ объёму (кратно машине)
+  const priceWithDeliveryPerM3 = +((adjustedTotalCost / deliveredVolumeM3)).toFixed(2);
+
+  // Витрина/совместимость
+  const fullProductName = productInfo.fullProductName || '';
+  const product = productInfo.product || '';
+  const type    = productInfo.type || '';
+  const subtype1= productInfo.subtype1 || '';
+  const subtype2= productInfo.subtype2 || '';
+
+  return {
+    json: {
+      // Идентификация
+      supplier, fullProductName, product, type, subtype1, subtype2,
+
+      // Цены вход/derived
+      pricePerTon,                         // ₽/т
+      bulkDensity,                         // т/м³
+      pricePerUnit: Number.isFinite(pricePerUnit) ? pricePerUnit : undefined, // ₽/м³ (derived)
+
+      // Объёмы/вес
+      requestedQuantity: qtyReqM3,         // м³ — запрос клиента
+      quantity: deliveredVolumeM3,         // м³ — что реально везём (кратно машине)
+      deliveredVolume: deliveredVolumeM3,  // м³
+      deliveredWeightTons: deliveredWeightT, // т
+
+      // Маршрут/транспорт
+      distanceKm, durationMin, vehicleType,
+      vehicleCapacity: capacityM3, trips,
+
+      // Доставка
+      perUnitDeliveryCost: perUnitDeliveryCost_M3, // ₽/м³
+      adjustedDeliveryCost,                        // ₽
+
+      // Товар/итог
+      productCost, adjustedTotalCost, priceWithDeliveryPerM3,
+
+      // Отладка
+      from: leg.start_address, to: leg.end_address,
+
+      // ✅ Пробрасываем клиента дальше
+      customer
+    }
+  };
+});

@@ -1,0 +1,207 @@
+{
+  "name": "Save Order to Database",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When order finalized",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "order-finalized"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-project.supabase.co/rest/v1/orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $credentials.supabaseKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $credentials.supabaseKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "order_id",
+              "value": "={{ $json.order_id || Date.now() }}"
+            },
+            {
+              "name": "customer_name",
+              "value": "={{ $json.customer?.name || '' }}"
+            },
+            {
+              "name": "customer_phone",
+              "value": "={{ $json.customer?.phone || '' }}"
+            },
+            {
+              "name": "customer_address",
+              "value": "={{ $json.customer?.address || '' }}"
+            },
+            {
+              "name": "product",
+              "value": "={{ $json.productInfo?.product || '' }}"
+            },
+            {
+              "name": "product_type",
+              "value": "={{ $json.productInfo?.type || '' }}"
+            },
+            {
+              "name": "subtype1",
+              "value": "={{ $json.productInfo?.subtype1 || '' }}"
+            },
+            {
+              "name": "subtype2",
+              "value": "={{ $json.productInfo?.subtype2 || '' }}"
+            },
+            {
+              "name": "full_product_name",
+              "value": "={{ $json.fullProductName || '' }}"
+            },
+            {
+              "name": "requested_quantity",
+              "value": "={{ $json.requestedQuantity || 0 }}"
+            },
+            {
+              "name": "delivered_quantity",
+              "value": "={{ $json.quantity || 0 }}"
+            },
+            {
+              "name": "delivered_weight_tons",
+              "value": "={{ $json.deliveredWeightTons || 0 }}"
+            },
+            {
+              "name": "vehicle_type",
+              "value": "={{ $json.vehicleType || '' }}"
+            },
+            {
+              "name": "supplier",
+              "value": "={{ $json.supplier || '' }}"
+            },
+            {
+              "name": "supplier_address",
+              "value": "={{ $json.from || '' }}"
+            },
+            {
+              "name": "distance_km",
+              "value": "={{ $json.distanceKm || 0 }}"
+            },
+            {
+              "name": "duration_min",
+              "value": "={{ $json.durationMin || 0 }}"
+            },
+            {
+              "name": "price_per_ton",
+              "value": "={{ $json.pricePerTon || 0 }}"
+            },
+            {
+              "name": "bulk_density",
+              "value": "={{ $json.bulkDensity || 0 }}"
+            },
+            {
+              "name": "price_per_unit",
+              "value": "={{ $json.pricePerUnit || 0 }}"
+            },
+            {
+              "name": "product_cost",
+              "value": "={{ $json.productCost || 0 }}"
+            },
+            {
+              "name": "delivery_cost",
+              "value": "={{ $json.adjustedDeliveryCost || 0 }}"
+            },
+            {
+              "name": "total_cost",
+              "value": "={{ $json.adjustedTotalCost || 0 }}"
+            },
+            {
+              "name": "price_with_delivery_per_m3",
+              "value": "={{ $json.priceWithDeliveryPerM3 || 0 }}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "raw_data",
+              "value": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Save to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.customer?.telegram_id }}",
+        "text": "=✅ Ваш заказ #{{ $json.order_id }} принят!\n\n📦 Товар: {{ $json.fullProductName }}\n📏 Объём: {{ $json.quantity }} м³\n💰 Сумма: {{ $json.adjustedTotalCost }} ₽\n\n🚛 Доставка будет осуществлена в ближайшее время.\n\nСпасибо за заказ! 🙌"
+      },
+      "name": "Notify Customer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_ADMIN_TELEGRAM_ID",
+        "text": "=🎉 Новый заказ #{{ $json.order_id }}\n\n👤 Клиент: {{ $json.customer?.name }}\n📞 {{ $json.customer?.phone }}\n📍 {{ $json.customer?.address }}\n\n🛒 Товар: {{ $json.fullProductName }}\n📦 Объём: {{ $json.quantity }} м³ ({{ $json.deliveredWeightTons }} т)\n🚛 Транспорт: {{ $json.vehicleType }}\n\n💰 Стоимость:\n   Товар: {{ $json.productCost }} ₽\n   Доставка: {{ $json.adjustedDeliveryCost }} ₽\n   ИТОГО: {{ $json.adjustedTotalCost }} ₽\n\n🏢 Поставщик: {{ $json.supplier }}\n📏 Расстояние: {{ $json.distanceKm }} км\n⏱ Время: {{ $json.durationMin }} мин"
+      },
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [650, 400]
+    }
+  ],
+  "connections": {
+    "When order finalized": {
+      "main": [
+        [
+          {
+            "node": "Save to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Notify Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+
+

@@ -699,6 +699,20 @@
         html += `
           <div class="result-card" style="${isBest ? 'border-left: 4px solid #10b981;' : ''}">
             <h4>${isBest ? '⭐ ' : ''}${offer.supplier || 'Поставщик'}</h4>
+            <div style="background:#ecfeff; border:1px solid #bae6fd; padding:12px; border-radius:10px; margin-bottom:12px;">
+              <div style="font-weight:800; color:#0369a1; margin-bottom:6px;">🧮 Формула: ИТОГО = МАТЕРИАЛ + ДОСТАВКА</div>
+              <div style="font-size:0.9rem; color:#075985;">
+                Материал: <strong id="m-mat-${idx}">${(offer.productCost || 0).toLocaleString()} ₽</strong>
+              </div>
+              <div style="font-size:0.9rem; color:#075985; margin-top:6px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                Доставка при расстоянии
+                <input id="m-dist-${idx}" type="number" step="0.1" min="1" value="${(offer.distanceKm || 0).toFixed(1)}" style="width:90px; padding:6px 10px; border:1px solid #93c5fd; border-radius:8px;"> км
+                = <strong id="m-deliv-${idx}">${(offer.adjustedDeliveryCost || 0).toLocaleString()} ₽</strong>
+              </div>
+              <div style="font-size:0.9rem; color:#075985; margin-top:6px;">
+                Итого: <strong id="m-total-${idx}">${(offer.adjustedTotalCost || 0).toLocaleString()} ₽</strong> · <span id="m-perm3-${idx}">${(offer.priceWithDeliveryPerM3 || 0).toLocaleString()} ₽/м³</span>
+              </div>
+            </div>
             
             <div class="result-row">
               <div class="result-label">Материал</div>
@@ -722,7 +736,7 @@
             
             <div class="result-row">
               <div class="result-label">Расстояние</div>
-              <div class="result-value">${(offer.distanceKm || 0).toFixed(1)} км</div>
+              <div class="result-value"><span id="m-dist-val-${idx}">${(offer.distanceKm || 0).toFixed(1)} км</span></div>
             </div>
             
             <div class="result-row">
@@ -742,21 +756,22 @@
             
             <div class="result-row">
               <div class="result-label">Стоимость доставки</div>
-              <div class="result-value" style="color: #3b82f6;">${(offer.adjustedDeliveryCost || 0).toLocaleString()} ₽</div>
+              <div class="result-value" style="color: #3b82f6;"><span id="m-deliv-val-${idx}">${(offer.adjustedDeliveryCost || 0).toLocaleString()} ₽</span></div>
             </div>
             
-            <div class="total-price">
+            <div class="total-price" id="m-total-val-${idx}">
               ${(offer.adjustedTotalCost || 0).toLocaleString()} ₽
             </div>
             
             <div style="text-align: center; font-size: 0.9rem; color: #666; margin-top: 10px;">
-              ${(offer.priceWithDeliveryPerM3 || 0).toLocaleString()} ₽/м³ с доставкой
+              <span id="m-perm3-val-${idx}">${(offer.priceWithDeliveryPerM3 || 0).toLocaleString()} ₽/м³</span> с доставкой
             </div>
           </div>
         `;
       });
       
       resultsDiv.innerHTML = html;
+      setupMobileFormulaEditors(offers);
     }
     
     // ========== ОТПРАВКА ЗАЯВКИ ==========
@@ -838,6 +853,65 @@
       updateUI();
       renderMaterials();
     }
+
+  // ==== Пересчёт формулы (моб) ====
+  let __mBase = [];
+  function setupMobileFormulaEditors(offers){
+    __mBase = (offers||[]).map(o=>({...o}));
+    (offers||[]).forEach((_, idx)=>{
+      const inp = document.getElementById(`m-dist-${idx}`);
+      if(!inp) return;
+      inp.addEventListener('input', ()=>mobileRecalc(idx));
+    });
+  }
+
+  function mobileRecalc(idx){
+    const base = __mBase[idx];
+    if(!base) return;
+    const inp = document.getElementById(`m-dist-${idx}`);
+    if(!inp) return;
+    const newDist = Math.max(1, parseFloat(inp.value||'0'));
+    const qty = (base.quantity ?? calculationResult?.quantity ?? selectedVolume) || 0;
+    const productCost = base.productCost ?? Math.round((base.pricePerUnit || 0) * qty);
+
+    let newDelivery = base.adjustedDeliveryCost || 0;
+    let newPerUnitDelivery = base.perUnitDeliveryCost || null;
+    if (base.vehicleType === 'Тонар' && isFinite(base.tonarRate) && isFinite(base.deliveredWeightTons)) {
+      newDelivery = Math.round(base.tonarRate * base.deliveredWeightTons * newDist);
+    } else if (isFinite(base.perUnitDeliveryCost) && isFinite(base.distanceKm) && base.distanceKm > 0) {
+      const perM3PerKm = base.perUnitDeliveryCost / base.distanceKm;
+      newPerUnitDelivery = perM3PerKm * newDist;
+      newDelivery = Math.round((newPerUnitDelivery || 0) * qty);
+    } else if (isFinite(base.adjustedDeliveryCost) && isFinite(base.distanceKm) && base.distanceKm > 0) {
+      newDelivery = Math.round(base.adjustedDeliveryCost * (newDist / base.distanceKm));
+    }
+
+    const newTotal = Math.round(productCost + newDelivery);
+    const perM3 = qty > 0 ? Math.round(newTotal / qty) : 0;
+
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    const fmt = (v) => Number(v||0).toLocaleString();
+
+    set(`m-deliv-${idx}`, fmt(newDelivery) + ' ₽');
+    set(`m-total-${idx}`, fmt(newTotal) + ' ₽');
+    set(`m-perm3-${idx}`, fmt(perM3) + ' ₽/м³');
+
+    set(`m-dist-val-${idx}`, newDist.toFixed(1) + ' км');
+    set(`m-deliv-val-${idx}`, fmt(newDelivery) + ' ₽');
+    set(`m-total-val-${idx}`, fmt(newTotal) + ' ₽');
+    set(`m-perm3-val-${idx}`, fmt(perM3) + ' ₽/м³');
+
+    // обновим calculationResult если это лучший (0)
+    if(idx===0 && calculationResult){
+      calculationResult = {
+        ...calculationResult,
+        adjustedDeliveryCost: newDelivery,
+        adjustedTotalCost: newTotal,
+        priceWithDeliveryPerM3: perM3,
+        distanceKm: newDist
+      };
+    }
+  }
   </script>
 </body>
 </html>

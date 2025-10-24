@@ -1273,6 +1273,7 @@
       setText(`formula-perm3-${idx}`, fmtMoney(newPerM3WithDelivery));
       setText(`delivery-cost-value-${idx}`, `${fmtMoney(newDeliveryCost)} ₽`);
       setText(`price-per-m3-value-${idx}`, `${fmtMoney(newPerM3WithDelivery)} ₽`);
+      setText(`total-cost-value-${idx}`, `${fmtMoney(newTotal)} ₽`);
       setText(`distance-value-${idx}`, `${newDist.toFixed(1)} км`);
       if (typeof newDuration !== 'undefined' && newDuration !== null) {
         setText(`duration-value-${idx}`, `${Math.round(newDuration)} мин (${(newDuration/60).toFixed(1)} ч)`);

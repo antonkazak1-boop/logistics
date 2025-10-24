@@ -1017,6 +1017,24 @@
             </button>
           </div>
         `;
+        
+        // Добавляем сравнительную таблицу вверху
+        if(offers.length > 1) {
+          html += `
+            <div class="result-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(124, 58, 237, 0.05)); border: 2px solid #c4b5fd; margin-bottom: 30px;">
+              <h4 style="color: #8b5cf6; text-align: center; margin-bottom: 25px;">📊 Быстрое сравнение</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                ${offers.map((o, i) => `
+                  <div style="text-align: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <p style="font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">${o.supplier}</p>
+                    <p style="font-size: 1.8rem; font-weight: 800; color: ${i === 0 ? '#10b981' : '#6b7280'}; margin-bottom: 5px;"><span id="comparison-total-${i}">${o.adjustedTotalCost ? Number(o.adjustedTotalCost).toLocaleString() : '-'}</span> ₽</p>
+                    <p style="font-size: 0.85rem; color: #9ca3af;"><span id="comparison-distance-${i}">${o.distanceKm ? Number(o.distanceKm).toFixed(1) + ' км' : ''}</span> • <span id="comparison-duration-${i}">${o.durationMin ? Math.round(o.durationMin) + ' мин' : ''}</span></p>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
 
         offers.forEach((offer, index) => {
           const isBest = index === 0;
@@ -1114,24 +1132,6 @@
             </div>
           `;
         });
-
-        // Добавляем сравнительную таблицу
-        if(offers.length > 1) {
-          html += `
-            <div class="result-card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(124, 58, 237, 0.05)); border: 2px solid #c4b5fd;">
-              <h4 style="color: #8b5cf6; text-align: center; margin-bottom: 25px;">📊 Быстрое сравнение</h4>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                ${offers.map((o, i) => `
-                  <div style="text-align: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-                    <p style="font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">${o.supplier}</p>
-                    <p style="font-size: 1.8rem; font-weight: 800; color: ${i === 0 ? '#10b981' : '#6b7280'}; margin-bottom: 5px;">${o.adjustedTotalCost ? Number(o.adjustedTotalCost).toLocaleString() : '-'} ₽</p>
-                    <p style="font-size: 0.85rem; color: #9ca3af;">${o.distanceKm ? Number(o.distanceKm).toFixed(1) + ' км' : ''} • ${o.durationMin ? Math.round(o.durationMin) + ' мин' : ''}</p>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        }
 
         resultsContainer.innerHTML = html;
         // Инициализация формул и обработчиков пересчёта
@@ -1280,6 +1280,13 @@
       }
       if (newPerUnitDelivery !== null) {
         setText(`perunit-delivery-${idx}`, `${fmtMoney(newPerUnitDelivery)} ₽`);
+      }
+
+      // Обновляем блок сравнения
+      setText(`comparison-total-${idx}`, fmtMoney(newTotal));
+      setText(`comparison-distance-${idx}`, `${newDist.toFixed(1)} км`);
+      if (typeof newDuration !== 'undefined' && newDuration !== null) {
+        setText(`comparison-duration-${idx}`, `${Math.round(newDuration)} мин`);
       }
 
       // Обновляем best-результат для отправки заявки
